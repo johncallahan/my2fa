@@ -5,6 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:countdown/countdown.dart';
 import 'package:dart_otp/dart_otp.dart';
 
+import 'package:passcode_screen/circle.dart';
+import 'package:passcode_screen/keyboard.dart';
+import 'package:passcode_screen/passcode_screen.dart';
+
 import 'package:my2fa/database.dart';
 import 'package:my2fa/model.dart';
 
@@ -20,9 +24,12 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final StreamController<bool> _verificationNotifier = StreamController<bool>.broadcast();
+
   int val = 0;
   CountDown cd;
   bool editMode = false;
+  bool isAuthenticated = false;
   
   final _biggerFont = const TextStyle(fontSize: 36.0);
 
@@ -103,7 +110,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: FutureBuilder<List<Code>>(
         future: DBProvider.db.getAllCodes(),
         builder: (BuildContext context, AsyncSnapshot<List<Code>> snapshot) {
-          if (snapshot.hasData) {
+          if (isAuthenticated && snapshot.hasData) {
             return ListView.builder(
               itemCount: snapshot.data.length,
               itemBuilder: (BuildContext context, int index) {
@@ -155,17 +162,48 @@ class _MyHomePageState extends State<MyHomePage> {
                 );
               } 
             );
+          } else if(!isAuthenticated) {
+            return PasscodeScreen(
+                title: 'Enter App Passcode',
+                circleUIConfig: CircleUIConfig(
+                  borderColor: Colors.blue,
+                  fillColor: Colors.blue,
+                  circleSize: 30),
+                keyboardUIConfig: KeyboardUIConfig(
+                  digitBorderWidth: 2,
+                  primaryColor: Colors.blue),
+                passwordEnteredCallback: _onPasscodeEntered,
+                cancelLocalizedText: 'Cancel',
+                deleteLocalizedText: 'Delete',
+                shouldTriggerVerification: _verificationNotifier.stream,
+                backgroundColor: Colors.black.withOpacity(0.8),
+                cancelCallback: _onPasscodeCancelled,
+              );
           } else {
             return Center(child: CircularProgressIndicator());
           }
         }
       ),
-      floatingActionButton: new FloatingActionButton(
+      floatingActionButton: !isAuthenticated ? null : new FloatingActionButton(
         onPressed: () { scan(); },
         tooltip: 'Scan QR Code',
         child: new Icon(Icons.add),
       ),
     );
+  }
+
+  _onPasscodeEntered(String enteredPasscode) {
+    bool isValid = '123456' == enteredPasscode;
+    _verificationNotifier.add(isValid);
+    if (isValid) {
+      setState(() {
+        this.isAuthenticated = isValid;
+      });
+    }
+  }
+
+  _onPasscodeCancelled() {
+
   }
 
   void scan() async {
@@ -187,5 +225,11 @@ class _MyHomePageState extends State<MyHomePage> {
     } catch (e) {
       return null;
     }
+  }
+
+  @override
+  void dispose() {
+    _verificationNotifier.close();
+    super.dispose();
   }
 }

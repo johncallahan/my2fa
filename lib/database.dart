@@ -22,7 +22,7 @@ class DBProvider {
 
   initDB() async {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
-    String path = join(documentsDirectory.path, "TestDB.db");
+    String path = join(documentsDirectory.path, "database.db");
     return await openDatabase(path, version: 1, onOpen: (db) {},
         onCreate: (Database db, int version) async {
       await db.execute("CREATE TABLE Code ("
@@ -30,6 +30,7 @@ class DBProvider {
           "user TEXT,"
           "site TEXT,"
           "secret TEXT,"
+          "salt TEXT,"
           "digits TEXT,"
           "algorithm TEXT,"
           "issuer TEXT,"
@@ -45,9 +46,9 @@ class DBProvider {
     int id = table.first["id"];
     //insert to the table using the new id
     var raw = await db.rawInsert(
-        "INSERT Into Code (id,user,site,secret,digits,algorithm,issuer,period)"
-        " VALUES (?,?,?,?,?,?,?,?)",
-        [id, newCode.user, newCode.site, newCode.secret, newCode.digits, newCode.algorithm, newCode.issuer, newCode.period]);
+        "INSERT Into Code (id,user,site,secret,salt,digits,algorithm,issuer,period)"
+        " VALUES (?,?,?,?,?,?,?,?,?)",
+        [id, newCode.user, newCode.site, newCode.secret, newCode.salt, newCode.digits, newCode.algorithm, newCode.issuer, newCode.period]);
     return raw;
   }
 
