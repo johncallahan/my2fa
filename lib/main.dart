@@ -98,7 +98,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return new Scaffold(
       appBar: new AppBar(
         title: new Text(widget.title),
-        actions: <Widget>[
+        actions: !isAuthenticated ? null : <Widget>[
             IconButton(
               icon: Icon(editMode ? Icons.save : Icons.edit),
               onPressed: () {
