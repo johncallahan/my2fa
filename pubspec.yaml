@@ -16,6 +16,8 @@ dependencies:
   sqflite: ^0.12.2+1
   path_provider: ^0.4.1
   passcode_screen: ^1.0.2
+  steel_crypt: ^1.7.1+1
+  random_string: ^2.0.1
 
 
 dev_dependencies:

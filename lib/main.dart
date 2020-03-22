@@ -4,6 +4,8 @@ import 'package:barcode_scan/barcode_scan.dart';
 import 'package:flutter/services.dart';
 import 'package:countdown/countdown.dart';
 import 'package:dart_otp/dart_otp.dart';
+import 'package:steel_crypt/steel_crypt.dart';
+import 'package:random_string/random_string.dart';
 
 import 'package:passcode_screen/circle.dart';
 import 'package:passcode_screen/keyboard.dart';
@@ -30,11 +32,12 @@ class _MyHomePageState extends State<MyHomePage> {
   CountDown cd;
   bool editMode = false;
   bool isAuthenticated = false;
+  String _passcode;
   
   final _biggerFont = const TextStyle(fontSize: 36.0);
 
   @override
-  void initState() {
+  void initState() {    
     countdown();
   }
 
@@ -44,10 +47,16 @@ class _MyHomePageState extends State<MyHomePage> {
     String justSite = match.group(1);
     String user = match.group(2);
     String secret = match.group(3);
+
+    var salt = CryptKey().genDart(16);
+    var Encrypter = AesCrypt(_passcode + "0000" + _passcode);
+    String encrypted = Encrypter.encrypt(secret,salt);
+    
     return Code(
       user: user,
       site: justSite,
-      secret: secret,
+      secret: encrypted,
+      salt: salt,
       digits: "6",
       algorithm: "SHA1",
       issuer: justSite,
@@ -67,31 +76,41 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Future<bool> _showConfirmationDialog(BuildContext context, String action) {
-  return showDialog<bool>(
-    context: context,
-    barrierDismissible: true,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text('Do you want to $action this item?'),
-        actions: <Widget>[
-          FlatButton(
-            child: const Text('Yes'),
-            onPressed: () {
-              Navigator.pop(context, true); // showDialog() returns true
-            },
-          ),
-          FlatButton(
-            child: const Text('No'),
-            onPressed: () {
-              Navigator.pop(context, false); // showDialog() returns false
-            },
-          ),
-        ],
-      );
-    },
-  );
-}
+  Future<bool> _showConfirmationDialog(BuildContext context, Code code, String action) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Do you want to $action this ${code.user} @ ${code.site}?'),
+          actions: <Widget>[
+            FlatButton(
+              child: const Text('Yes'),
+              onPressed: () {
+                Navigator.pop(context, true); // showDialog() returns true
+              },
+            ),
+            FlatButton(
+              child: const Text('No'),
+              onPressed: () {
+                Navigator.pop(context, false); // showDialog() returns false
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _getTOTP(Code code) {
+    var Encrypter = AesCrypt(_passcode + "0000" + _passcode);
+    try {
+      String decrypted = Encrypter.decrypt(code.secret,code.salt);
+      return TOTP(secret: decrypted).now();
+    } catch(e) {
+      return TOTP(secret: randomString(32)).now();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +141,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     switch(dismissDirection) {
                       case DismissDirection.endToStart:
                       case DismissDirection.startToEnd:
-                        return await _showConfirmationDialog(context, 'delete') == true;
+                        return await _showConfirmationDialog(context, code, 'delete') == true;
                       case DismissDirection.horizontal:
                       case DismissDirection.vertical:
                       case DismissDirection.up:
@@ -141,7 +160,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         ListTile(
                           leading: const Icon(Icons.timelapse),
                           title: Text(
-                            editMode ? code.user + "@" + code.issuer : TOTP(secret: code.secret).now(),
+                            editMode ? code.user + "@" + code.issuer : _getTOTP(code),
                             style: _biggerFont,
                           ),
                           subtitle: Text(editMode ? "" : code.user + "@" + code.issuer),
@@ -184,7 +203,7 @@ class _MyHomePageState extends State<MyHomePage> {
           }
         }
       ),
-      floatingActionButton: !isAuthenticated ? null : new FloatingActionButton(
+      floatingActionButton: !isAuthenticated || editMode ? null : new FloatingActionButton(
         onPressed: () { scan(); },
         tooltip: 'Scan QR Code',
         child: new Icon(Icons.add),
@@ -193,13 +212,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   _onPasscodeEntered(String enteredPasscode) {
-    bool isValid = '123456' == enteredPasscode;
-    _verificationNotifier.add(isValid);
-    if (isValid) {
-      setState(() {
-        this.isAuthenticated = isValid;
-      });
-    }
+    _passcode = enteredPasscode;
+    //_verificationNotifier.add(true);
+    setState(() { this.isAuthenticated = true; });
   }
 
   _onPasscodeCancelled() {
