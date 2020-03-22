@@ -30,6 +30,7 @@ class DBProvider {
           "user TEXT,"
           "site TEXT,"
           "secret TEXT,"
+          "fake TEXT,"
           "salt TEXT,"
           "digits TEXT,"
           "algorithm TEXT,"
@@ -46,9 +47,9 @@ class DBProvider {
     int id = table.first["id"];
     //insert to the table using the new id
     var raw = await db.rawInsert(
-        "INSERT Into Code (id,user,site,secret,salt,digits,algorithm,issuer,period)"
-        " VALUES (?,?,?,?,?,?,?,?,?)",
-        [id, newCode.user, newCode.site, newCode.secret, newCode.salt, newCode.digits, newCode.algorithm, newCode.issuer, newCode.period]);
+        "INSERT Into Code (id,user,site,secret,fake,salt,digits,algorithm,issuer,period)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?)",
+        [id, newCode.user, newCode.site, newCode.secret, newCode.fake,newCode.salt, newCode.digits, newCode.algorithm, newCode.issuer, newCode.period]);
     return raw;
   }
 

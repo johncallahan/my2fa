@@ -56,6 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
       user: user,
       site: justSite,
       secret: encrypted,
+      fake: randomString(secret.length),
       salt: salt,
       digits: "6",
       algorithm: "SHA1",
@@ -108,7 +109,7 @@ class _MyHomePageState extends State<MyHomePage> {
       String decrypted = Encrypter.decrypt(code.secret,code.salt);
       return TOTP(secret: decrypted).now();
     } catch(e) {
-      return TOTP(secret: randomString(32)).now();
+      return TOTP(secret: code.fake).now();
     }
   }
 

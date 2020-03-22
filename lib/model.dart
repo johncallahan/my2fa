@@ -15,6 +15,7 @@ class Code {
   String user;
   String site;
   String secret;
+  String fake;
   String salt;
   String digits;
   String algorithm;
@@ -26,6 +27,7 @@ class Code {
     this.user,
     this.site,
     this.secret,
+    this.fake,
     this.salt,
     this.digits,
     this.algorithm,
@@ -38,6 +40,7 @@ class Code {
         user: json["user"],
         site: json["site"],
         secret: json["secret"],
+        fake: json["fake"],
         salt: json["salt"],
         digits: json["digits"],
         algorithm: json["algorithm"],
@@ -50,6 +53,7 @@ class Code {
         "user": user,
         "site": site,
         "secret": secret,
+        "fake": fake,
         "salt": salt,
         "digits": digits,
         "algorithm": algorithm,
